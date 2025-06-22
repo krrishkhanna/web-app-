@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwritten Digit Image Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        select {
+            padding: 12px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            min-width: 150px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .results-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .digit-image {
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .digit-image:hover {
+            transform: scale(1.05);
+        }
+        
+        .digit-image canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        
+        .sample-label {
+            color: white;
+            font-size: 12px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .info-box {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .images-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Handwritten Digit Image Generator</h1>
+        <p class="subtitle">Generate synthetic MNIST-like images using your trained model.</p>
+        
+        <div class="info-box">
+            <strong>Note:</strong> This is a demo interface. In a real implementation, this would connect to your trained neural network model to generate authentic handwritten digit variations.
+        </div>
+        
+        <div class="input-section">
+            <label for="digitSelect">Choose a digit to generate (0-9):</label>
+            <select id="digitSelect">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+            </select>
+        </div>
+        
+        <button onclick="generateImages()">Generate Images</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating images...</p>
+        </div>
+        
+        <div class="results-section" id="results" style="display: none;">
+            <h2 class="results-title">Generated images of digit <span id="currentDigit">2</span></h2>
+            <div class="images-grid" id="imagesGrid">
+                <!-- Generated images will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate image generation (in real implementation, this would call your trained model)
+        function generateImages() {
+            const digit = document.getElementById('digitSelect').value;
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const imagesGrid = document.getElementById('imagesGrid');
+            const currentDigit = document.getElementById('currentDigit');
+            
+            // Show loading
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // Hide loading
+                loading.style.display = 'none';
+                
+                // Update digit display
+                currentDigit.textContent = digit;
+                
+                // Clear previous images
+                imagesGrid.innerHTML = '';
+                
+                // Generate 5 sample images
+                for (let i = 1; i <= 5; i++) {
+                    const imageContainer = document.createElement('div');
+                    imageContainer.className = 'digit-image';
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 28;
+                    canvas.height = 28;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Generate a synthetic handwritten digit pattern
+                    generateDigitPattern(ctx, parseInt(digit), i);
+                    
+                    const label = document.createElement('div');
+                    label.className = 'sample-label';
+                    label.textContent = `Sample ${i}`;
+                    
+                    imageContainer.appendChild(canvas);
+                    imageContainer.appendChild(label);
+                    imagesGrid.appendChild(imageContainer);
+                }
+                
+                // Show results
+                results.style.display = 'block';
+            }, 1500);
+        }
+        
+        // Generate synthetic digit patterns (this simulates what your trained model would do)
+        function generateDigitPattern(ctx, digit, variation) {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, 28, 28);
+            ctx.fillStyle = 'white';
+            ctx.font = '18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Add some variation to make each sample unique
+            const offsetX = (Math.random() - 0.5) * 4;
+            const offsetY = (Math.random() - 0.5) * 4;
+            const rotation = (Math.random() - 0.5) * 0.3;
+            
+            ctx.save();
+            ctx.translate(14 + offsetX, 14 + offsetY);
+            ctx.rotate(rotation);
+            
+            // Draw the digit with slight variations
+            const fontSize = 16 + (Math.random() - 0.5) * 4;
+            ctx.font = `${fontSize}px Arial`;
+            ctx.fillText(digit.toString(), 0, 0);
+            
+            ctx.restore();
+            
+            // Add some noise to make it look more realistic
+            const imageData = ctx.getImageData(0, 0, 28, 28);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (Math.random() < 0.05) {
+                    const noise = Math.random() * 100;
+                    data[i] = noise;     // Red
+                    data[i + 1] = noise; // Green
+                    data[i + 2] = noise; // Blue
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        // Generate initial images on page load
+        window.onload = function() {
+            generateImages();
+        };
+    </script>
+</body>
+</html>
